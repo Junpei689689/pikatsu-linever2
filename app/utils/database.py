@@ -83,11 +83,21 @@ class UserCampaignAction(Base):
 def get_db_url():
     """環境変数からDB URLを取得"""
     db_url = os.getenv("DATABASE_URL", "sqlite:///./data/db.sqlite3")
-    # Renderの場合、相対パスを絶対パスに変換
+    
+    # Renderの場合、相対パスを/tmpに変更
     if db_url.startswith("sqlite:///./"):
-        db_path = db_url.replace("sqlite:///./", "")
-        abs_path = os.path.abspath(db_path)
-        db_url = f"sqlite:///{abs_path}"
+        # Render環境かどうかチェック
+        if os.getenv("RENDER"):
+            # Renderでは /tmp を使用
+            db_url = "sqlite:////tmp/db.sqlite3"
+        else:
+            # ローカル環境では相対パスを絶対パスに変換
+            db_path = db_url.replace("sqlite:///./", "")
+            abs_path = os.path.abspath(db_path)
+            # dataディレクトリを作成
+            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+            db_url = f"sqlite:///{abs_path}"
+    
     return db_url
 
 
