@@ -23,6 +23,7 @@ from app.notifiers.formatters import (
     format_help_text,
     format_plan_info_text
 )
+from app.collectors.campaign_collector import get_campaigns
 from app.collectors.dummy_collector import get_dummy_campaigns
 from app.utils.database import init_db
 
@@ -75,9 +76,18 @@ async def webhook(request: Request):
 
 
 @handler.add(MessageEvent, message=TextMessageContent)
-def handle_message(event: MessageEvent):
+def handle_message(event: MessageEvent):  # type: ignore
     """メッセージイベント処理"""
-    user_id = event.source.user_id
+    # 型安全な属性アクセス
+    if not hasattr(event.source, 'user_id') or not event.source.user_id:  # type: ignore
+        return
+    
+    user_id: str = event.source.user_id  # type: ignore
+    
+    # メッセージテキスト取得（型チェック）
+    if not isinstance(event.message, TextMessageContent):
+        return
+    
     msg_text = event.message.text.strip().lower()
     
     # プラン判定
@@ -102,10 +112,10 @@ def handle_message(event: MessageEvent):
     # LINE返信
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=reply_text)]
+        line_bot_api.reply_message(  # type: ignore
+            ReplyMessageRequest(  # type: ignore
+                reply_token=event.reply_token,  # type: ignore
+                messages=[TextMessage(text=reply_text)]  # type: ignore
             )
         )
 
@@ -123,7 +133,7 @@ def _load_plan(user_id: str) -> str:
         return force_plan
     
     profile = UserProfile.get_user(user_id)
-    return profile.plan
+    return str(profile.plan)
 
 
 def _handle_top3_command(user_id: str, plan: str) -> str:
@@ -137,7 +147,14 @@ def _handle_top3_command(user_id: str, plan: str) -> str:
     
     if plan == 'paid':
         # 有料: TOP3詳細
-        campaigns = get_dummy_campaigns()
+        # 実キャンペーン取得（キャッシュ優先）
+        campaigns = get_campaigns(force_refresh=False)
+        
+        # キャンペーンがない場合はダミー使用
+        if not campaigns:
+            print("⚠️ 実キャンペーンが取得できないため、ダミーを使用")
+            campaigns = get_dummy_campaigns()
+        
         ranked = rank_campaigns_for_user(campaigns, profile)
         return format_paid_top3_text(ranked)
     
