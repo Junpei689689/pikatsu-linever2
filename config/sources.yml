@@ -1,0 +1,36 @@
+sources:
+  # 楽天系
+  - name: "楽天市場"
+    url: "https://event.rakuten.co.jp/"
+    type: "ec"
+    check_frequency: "daily"
+    
+  - name: "楽天カード"
+    url: "https://www.rakuten-card.co.jp/campaign/"
+    type: "card"
+    check_frequency: "daily"
+  
+  # PayPay系
+  - name: "PayPayモール"
+    url: "https://paypay.ne.jp/event/"
+    type: "ec"
+    check_frequency: "daily"
+    
+  - name: "PayPayカード"
+    url: "https://www.paypay-card.co.jp/campaign/"
+    type: "card"
+    check_frequency: "daily"
+  
+  # その他主要サービス
+  - name: "dカード"
+    url: "https://d-card.jp/st/campaigns/"
+    type: "card"
+    check_frequency: "daily"
+    
+  - name: "au PAY"
+    url: "https://aupay.auone.jp/campaign/"
+    type: "payment"
+    check_frequency: "daily"
+
+# 将来的な拡張用
+# collector設定は後日追加
